@@ -8,6 +8,7 @@ import java.sql.Connection;
 /*
 
 Класс содержит описание хэндлера базы данных:
+
 - установление соединения
 
 - создание объекта авторизовавшегося пользователя
@@ -59,7 +60,7 @@ public class DatabaseHandler {
         }
     }
 
-    // Статический метод - выполняет запрос SELECT в базу данных
+    // Выполняет запрос SELECT в базу данных
     public static ResultSet doSelect(Connection connection, String SQL) throws SQLException {
 
         Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -67,11 +68,33 @@ public class DatabaseHandler {
 
     }
 
-    // Статический метод - выполняет запросы UPDATE, INSERT, DELETE в базу данных
+
+    // Выполняет запросы UPDATE, INSERT, DELETE в базу данных
     public static void doUpdate(Connection connection, String SQL) throws SQLException {
 
         Statement statement = connection.createStatement();
         statement.execute(SQL);
 
+    }
+
+
+    /*
+
+        Проверка: есть ли товар с таким названием
+
+        @return
+            true - такой товара есть
+            false - такого товара нет
+
+     */
+    public static boolean searchName(Connection connection, String name) throws SQLException {
+
+        String SQL = "select * from Product where product_name = " + name;
+        ResultSet resultSet = DatabaseHandler.doSelect(connection, SQL);
+        if (resultSet.next()) {
+            JOptionPane.showMessageDialog(null, "Товар с таким названием уже существует", "Ошибка", JOptionPane.WARNING_MESSAGE);
+            return true;
+        }
+        else return false;
     }
 }

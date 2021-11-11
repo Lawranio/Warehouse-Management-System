@@ -1,19 +1,22 @@
 package com.company;
 
 
+
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.util.*;
 
 
 /*
 
 Класс содержит описание пользователя "Работник склада":
-- интерфейс, состоящий из вложенного класса WarehouseInterface и
-  дополнительного класса ButtonEventListener для работы кнопок
+
+- интерфейс, состоящий из вложенного класса WarehouseInterface
 
 - функции пользователя (кнопки)
 
@@ -30,40 +33,34 @@ class WarehouseEmployee {
 
     private static class WarehouseInterface extends JFrame{
 
+        ResultSet resultSet;
+        String SQL;
+
         // Создать карточку товара
         JButton newStuffButton = new JButton(new AbstractAction("Создать карточку товара") {
             @Override
             public void actionPerformed(ActionEvent e) {
 
                 boolean nameCheck = false;  // для проверки названия
-                String SQL;                 // запрос в базу данных
                 String name = "";         // название товара
                 String amount;              // количество товара
                 String price;               // стоимость товара
-                ResultSet resultSet;        // результат запроса
-
 
                 // Проверка: Существует ли товар с таким названием
                 while (!nameCheck) {
 
                     name = JOptionPane.showInputDialog("Введите название продукта");
                     name = "'" + name + "'";
-                    SQL = "select * from Product where product_name = " + name;
 
                     try {
 
-                        resultSet = DatabaseHandler.doSelect(connection, SQL);
-
-                        // Если результат запроса НЕпустой
-                        if (resultSet.next()) { JOptionPane.showMessageDialog(null, "Товар с таким названием уже существует", "Информация", JOptionPane.PLAIN_MESSAGE); }
-                        else nameCheck = true;
+                        if (!DatabaseHandler.searchName(connection, name)) nameCheck = true;
 
                     } catch (SQLException ex) {
                         ex.printStackTrace();
                     }
 
                 }
-
 
                 // Вставка нового продукта
                 try {
@@ -84,43 +81,111 @@ class WarehouseEmployee {
             }
         });
 
+        // Редактировать карточку товара
         JButton editStuffButton = new JButton(new AbstractAction("Редактировать карточку товара") {
             @Override
             public void actionPerformed(ActionEvent e) {
 
                 final JFrame editStuffWindow = new JFrame("Редактирование карточки товара");
                 editStuffWindow.setVisible(true);
-                editStuffWindow.setBounds(700, 400, 600, 250);
+                editStuffWindow.setBounds(700, 400, 800, 450);
+
+                final Vector<Vector<String>> tableData = new Vector<>();
+                final Vector<String> tableRowInfo = new Vector<>();
+                final Vector<String> tableHeader = new Vector<>();
+
+                tableHeader.add("Код товара");
+                tableHeader.add("Название товара");
+                tableHeader.add("Количество");
+                tableHeader.add("Стоимость");
+
+                final JTable productTable = new JTable();
+                DefaultTableModel tableModel = new DefaultTableModel(tableData, tableHeader) {
+
+                    // Если таблица была изменена, то выполняется этот метод
+                    @Override
+                    public void fireTableCellUpdated(int row, int column) {
+                        super.fireTableCellUpdated(row, column);
+                        SQL = "update Product set ";
+
+                        try {
+                            resultSet.first();
+
+                            // Изменение кода товара
+                            if (column == 0) {
+
+                                tableRowInfo.setElementAt(resultSet.getString(1), 0);
+                                tableData.remove(0);
+                                tableData.add(tableRowInfo);
+                                JOptionPane.showMessageDialog(null, "Изменить код товара невозможно. Изменения не будут записаны.", "Ошибка", JOptionPane.WARNING_MESSAGE);
+                            }
+
+                            // Изменение названия товара
+                            if (column == 1) {
+
+                                String name = getValueAt(0, 1).toString();
+                                name = "'" + name + "'";
+
+                                // Проверка: есть ли товар с таким же названием
+                                if (!DatabaseHandler.searchName(connection, name)) {
+
+                                    SQL = SQL + "product_name = '" + getValueAt(0, 1) + "' where product_id = " + resultSet.getString(1);
+                                    System.out.println(SQL);
+                                    DatabaseHandler.doUpdate(connection, SQL);
+                                    textActionLog.append("Изменено название товара '" + resultSet.getString(2) + "' на '" + getValueAt(0, 1) + "'\n");
+                                }
+                                else {
+
+                                    tableRowInfo.setElementAt(resultSet.getString(2), 1);
+                                    tableData.remove(0);
+                                    tableData.add(tableRowInfo);
+                                }
+
+                            }
+
+                            // Изменение количества товара
+                            if (column == 2) {
+
+                                SQL = SQL + "amount = " + getValueAt(0, 2) + " where product_id = " + resultSet.getString(1);
+                                System.out.println(SQL);
+                                DatabaseHandler.doUpdate(connection, SQL);
+                                textActionLog.append("Изменено количество на складе товара '" + resultSet.getString(2) + "' с " + resultSet.getString(3) + " на " + getValueAt(0, 2) + "\n");
+                            }
+
+                            // Изменение стоимости товара
+                            if (column == 3) {
+
+                                SQL = SQL + "price = " + getValueAt(0, 3) + " where product_id = " + resultSet.getString(1);
+                                System.out.println(SQL);
+                                DatabaseHandler.doUpdate(connection, SQL);
+                                textActionLog.append("Изменена стоимость товара '" + resultSet.getString(2) + "' с " + resultSet.getString(4) + " на " + getValueAt(0, 3) + "\n");
+                            }
+
+
+                        } catch (SQLException ex) {
+                            ex.printStackTrace();
+                        }
+
+                    }
+
+                };
+                productTable.setModel(tableModel);
 
                 final JTextField inputField = new JTextField("", 2);
                 final JCheckBox stuff_id = new JCheckBox("Код товара", false);
                 final JCheckBox stuff_name = new JCheckBox("Название товара", false);
-                final JCheckBox stuff_amount = new JCheckBox("Количество товара на складе", false);
-                final JCheckBox stuff_price = new JCheckBox("Стоимость единицы товара", false);
-                final JTextArea textArea = new JTextArea();
-
-                final String[] row = new String[1];              // номер строки товара для изменения
-                final ResultSet[] resultSet = new ResultSet[1];  // результат запроса
 
                 // Поиск товара для редактирования
                 JButton search = new JButton(new AbstractAction("Найти товар") {
+
                     @Override
                     public void actionPerformed(ActionEvent e) {
 
-                        textArea.setText("");
-
-                        boolean resultCheck = false;
-                        String SQL = "select * from Product where ";
+                        SQL = "select * from Product where ";
                         if (stuff_id.isSelected()) {
 
                             SQL = SQL + "product_id = " + inputField.getText();
                             stuff_id.setSelected(false);
-                        }
-
-                        if (stuff_amount.isSelected()) {
-
-                            SQL = SQL + "amount = " + inputField.getText();
-                            stuff_amount.setSelected(false);
                         }
 
                         if (stuff_name.isSelected()) {
@@ -129,109 +194,56 @@ class WarehouseEmployee {
                             stuff_name.setSelected(false);
                         }
 
-                        if (stuff_price.isSelected()) {
-
-                            SQL = SQL + "price = " + inputField.getText();
-                            stuff_price.setSelected(false);
-                        }
-
                         inputField.setText("");
 
                         try {
 
-                            resultSet[0] = DatabaseHandler.doSelect(connection, SQL);
-                            int i = 1;
+                            resultSet = DatabaseHandler.doSelect(connection, SQL);
 
-                            while (resultSet[0].next()) {
+                            if (resultSet.next()) {
 
-                                resultCheck = true;
-                                SQL = resultSet[0].getString(1) + " " + resultSet[0].getString(2) + " " + resultSet[0].getString(3) + " " + resultSet[0].getString(4);
-                                SQL = "#" + i + " - " + SQL;
-                                textArea.append(SQL + "\n");
-                                i++;
+                                tableData.clear();
+                                tableRowInfo.add(resultSet.getString(1));
+                                tableRowInfo.add(resultSet.getString(2));
+                                tableRowInfo.add(resultSet.getString(3));
+                                tableRowInfo.add(resultSet.getString(4));
+                                tableData.add(tableRowInfo);
+                                SwingUtilities.updateComponentTreeUI(editStuffWindow);
+                                System.out.println(tableData);
+                                System.out.println(tableRowInfo);
+
                             }
-
-                            if (!resultCheck) textArea.append("Ничего не найдено\n");
+                            else JOptionPane.showMessageDialog(null, "Ничего не найдено", "Информация", JOptionPane.PLAIN_MESSAGE);
 
 
                         } catch (SQLException ex) {
                             ex.printStackTrace();
                         }
-                    }
-                });
-
-                // Выбор товара и редактирование
-                JButton confirm = new JButton(new AbstractAction("Выбрать товар") {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        row[0] = inputField.getText();
-                        System.out.println(row[0]);
-                        inputField.setText("");
-
-                        String info;
-                        String SQL = "update Product set ";
-
-                        try {
-                            resultSet[0].absolute(Integer.parseInt(row[0]));
-
-                            if (stuff_amount.isSelected()) {
-                                info = JOptionPane.showInputDialog("Изменение количества на складе товара '" + resultSet[0].getString(2) + "'. Сейчас - " + resultSet[0].getString(3));
-                                SQL = SQL + "amount = " + info + " where product_id = " + resultSet[0].getString(1);
-                                System.out.println(SQL);
-                                DatabaseHandler.doUpdate(connection, SQL);
-                                editStuffWindow.dispose();
-                                textActionLog.append("Изменено количество на складе товара '" + resultSet[0].getString(2) + "' с " + resultSet[0].getString(3) + " на " + info);
-                            }
-
-                            if (stuff_name.isSelected()) {
-                                info = JOptionPane.showInputDialog("Изменение названия товара '" + resultSet[0].getString(2) + "'");
-                                SQL = SQL + "product_name = '" + info + "' where product_id = " + resultSet[0].getString(1);
-                                System.out.println(SQL);
-                                DatabaseHandler.doUpdate(connection, SQL);
-                                editStuffWindow.dispose();
-                                textActionLog.append("Изменено название товара '" + resultSet[0].getString(2) + "' на '" + info + "'");
-                            }
-
-                            if (stuff_price.isSelected()) {
-                                info = JOptionPane.showInputDialog("Изменение стоимости товара '" + resultSet[0].getString(2) + "'. Сейчас - " + resultSet[0].getString(4));
-                                SQL = SQL + "price = " + info + " where product_id = " + resultSet[0].getString(1);
-                                System.out.println(SQL);
-                                DatabaseHandler.doUpdate(connection, SQL);
-                                editStuffWindow.dispose();
-                                textActionLog.append("Изменена стоимость товара '" + resultSet[0].getString(2) + "' с " + resultSet[0].getString(4) + " на " + info);
-                            }
-
-                            if (stuff_id.isSelected()) {
-                                JOptionPane.showMessageDialog(null, "Редактирование кода товара невозможно", "Ошибка", JOptionPane.WARNING_MESSAGE);
-                                stuff_id.setSelected(false);
-                            }
-
-
-                        } catch (SQLException ex) {
-                            ex.printStackTrace();
-                        }
-
                     }
                 });
 
                 Container container = editStuffWindow.getContentPane();
-                container.setLayout(new GridLayout(4, 1, 2, 3));
+                container.setLayout(new GridLayout(3, 1, 2, 3));
 
                 container.add(stuff_name);
-                container.add(stuff_amount);
                 container.add(stuff_id);
-                container.add(stuff_price);
                 container.add(inputField);
                 container.add(search);
-                container.add(textArea);
-                container.add(confirm);
-                textArea.setEditable(false);
-
+                container.add(new JScrollPane(productTable));
             }
         });
 
+        // Сформировать поставку
         JButton createSupply = new JButton("Сформировать поставку");
+
+        // Просмотр товаров
+        JButton showStuff = new JButton(new AbstractAction("Просмотр товаров") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+
+            }
+        });
 
         JTextArea textActionLog = new JTextArea();
 
