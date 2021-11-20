@@ -50,12 +50,14 @@ public class DatabaseHandler {
         try {
             Connection connection = DriverManager.getConnection(connectionURL);
 
-            if (login.equals("user=warehouse;")) { WarehouseEmployee employee = new WarehouseEmployee(connection); }
+            if (login.equals("user=склад;")) { WarehouseEmployee employee = new WarehouseEmployee(connection); }
+            if (login.equals("user=магазинОвен;")) { ShopEmployee employee = new ShopEmployee(connection, "Овен"); }
         }
 
         catch (SQLException ex) {
             //TODO: Сделать так, чтобы программу не нужно было перезапускать
-            JOptionPane.showMessageDialog(null, "Неправильные данные для входа. Перезапустите программу и повторите ввод.", "Авторизация", JOptionPane.PLAIN_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Неправильные данные для входа. Перезапустите программу и повторите ввод." +
+                                                " При повторяющейся ошибке обратитесь к системному администратору.", "Авторизация", JOptionPane.WARNING_MESSAGE);
             System.exit(0);
         }
     }
@@ -91,10 +93,7 @@ public class DatabaseHandler {
 
         String SQL = "select * from Product where product_name = " + name;
         ResultSet resultSet = DatabaseHandler.doSelect(connection, SQL);
-        if (resultSet.next()) {
-            JOptionPane.showMessageDialog(null, "Товар с таким названием уже существует", "Ошибка", JOptionPane.WARNING_MESSAGE);
-            return true;
-        }
-        else return false;
+        return resultSet.next();
     }
+
 }
