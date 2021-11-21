@@ -50,8 +50,14 @@ public class DatabaseHandler {
         try {
             Connection connection = DriverManager.getConnection(connectionURL);
 
+            // Создание работника склада
             if (login.equals("user=склад;")) { WarehouseEmployee employee = new WarehouseEmployee(connection); }
+
+            // Создание работников магазина
             if (login.equals("user=магазинОвен;")) { ShopEmployee employee = new ShopEmployee(connection, "Овен"); }
+
+            // Создание работников доставки
+            if (login.equals("user=доставкаСдек;")) { DeliveryEmployee employee = new DeliveryEmployee(connection, "Сдек"); }
         }
 
         catch (SQLException ex) {

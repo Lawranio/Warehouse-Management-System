@@ -269,7 +269,7 @@ class WarehouseEmployee {
                 tableModel.addColumn("Номер поставки");
 
                 SQL = "select top 10 * from Delivery where delivery_id is null";
-                final int[] counter = {0};
+                final int[] counter = {0}; //TODO: Вывод следующих записей
 
                 // Вывод первых 10 записей
                 try {
@@ -293,6 +293,7 @@ class WarehouseEmployee {
                     ex.printStackTrace();
                 }
 
+                // Собрать поставку
                 final JButton collectOrder = new JButton(new AbstractAction("Собрать заказ") {
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -313,6 +314,7 @@ class WarehouseEmployee {
                     }
                 });
 
+                // Назначить службу доставки
                 final JButton appointDelivery = new JButton(new AbstractAction("Назначить службу доставки") {
                     @Override
                     public void actionPerformed(ActionEvent e) {

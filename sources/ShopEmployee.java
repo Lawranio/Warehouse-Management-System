@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.xml.crypto.Data;
 
 
 /*
@@ -28,9 +27,9 @@ class ShopEmployee {
     public static String shopName;
 
     public ShopEmployee(Connection connection, String shop) {
+        shopName = "'" + shop + "'";
         ShopInterface app = new ShopInterface(connection);
         app.setVisible(true);
-        shopName = "'" + shop + "'";
     }
 
     private static class ShopInterface extends JFrame {
@@ -126,7 +125,7 @@ class ShopEmployee {
 
         ShopInterface(Connection con) {
 
-            super("Склад - работник магазина");
+            super("Склад - работник магазина " + shopName);
             connection = con;
             this.setBounds(600, 400, 900, 450);
             this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
