@@ -77,7 +77,6 @@ class WarehouseEmployee {
                     ex.printStackTrace();
                 }
 
-                if (!name.equals("'null'")) textActionLog.append("Создана карточка товара " + name + "\n");
             }
         });
 
@@ -123,7 +122,6 @@ class WarehouseEmployee {
                                     SQL = SQL + "product_name = '" + getValueAt(0, 1) + "' where product_id = " + resultSet.getString(1);
                                     System.out.println(SQL);
                                     DatabaseHandler.doUpdate(connection, SQL);
-                                    textActionLog.append("Изменено название товара '" + resultSet.getString(2) + "' на '" + getValueAt(0, 1) + "'\n");
                                 }
                                 else {
 
@@ -142,7 +140,6 @@ class WarehouseEmployee {
                                 SQL = SQL + "amount = " + getValueAt(0, 2) + " where product_id = " + resultSet.getString(1);
                                 System.out.println(SQL);
                                 DatabaseHandler.doUpdate(connection, SQL);
-                                textActionLog.append("Изменено количество на складе товара '" + resultSet.getString(2) + "' с " + resultSet.getString(3) + " на " + getValueAt(0, 2) + "\n");
                             }
 
                             // Изменение стоимости товара
@@ -151,7 +148,6 @@ class WarehouseEmployee {
                                 SQL = SQL + "price = " + getValueAt(0, 3) + " where product_id = " + resultSet.getString(1);
                                 System.out.println(SQL);
                                 DatabaseHandler.doUpdate(connection, SQL);
-                                textActionLog.append("Изменена стоимость товара '" + resultSet.getString(2) + "' с " + resultSet.getString(4) + " на " + getValueAt(0, 3) + "\n");
                             }
 
 
@@ -208,16 +204,12 @@ class WarehouseEmployee {
 
                             if (resultSet.next()) {
 
-                                tableData.clear();
-                                tableRowInfo.add(resultSet.getString(1));
-                                tableRowInfo.add(resultSet.getString(2));
-                                tableRowInfo.add(resultSet.getString(3));
-                                tableRowInfo.add(resultSet.getString(4));
-                                tableData.add(tableRowInfo);
-                                SwingUtilities.updateComponentTreeUI(editStuffWindow);
+                                if (tableModel.getRowCount() > 0) tableModel.removeRow(0);
+                                tableModel.addRow(new Object[] {resultSet.getString(1), resultSet.getString(2), resultSet.getString(3), resultSet.getString(4)});
 
                             }
                             else JOptionPane.showMessageDialog(null, "Ничего не найдено", "Информация", JOptionPane.PLAIN_MESSAGE);
+                            SwingUtilities.updateComponentTreeUI(editStuffWindow);
 
 
                         } catch (SQLException ex) {
@@ -268,11 +260,11 @@ class WarehouseEmployee {
                 tableModel.addColumn("Статус поставки");
                 tableModel.addColumn("Номер поставки");
 
-                SQL = "select top 10 * from Delivery where delivery_id is null";
-                final int[] counter = {0}; //TODO: Вывод следующих записей
+                SQL = "select * from Delivery where delivery_id is null";
 
-                // Вывод первых 10 записей
+                // Вывод
                 try {
+
                     resultSet = DatabaseHandler.doSelect(connection, SQL);
                     if (!resultSet.next()) JOptionPane.showMessageDialog(null, "Запросов нет.", "Информация", JOptionPane.PLAIN_MESSAGE);
                     else {
@@ -306,7 +298,6 @@ class WarehouseEmployee {
                             SQL = "update Delivery set delivery_status = 'Собирается' where delivery_number = " + resultSet.getString(13);
                             supplyTable.setValueAt("Собирается", row, 9);
                             DatabaseHandler.doUpdate(connection, SQL);
-                            textActionLog.append("Статус поставки №" + resultSet.getString(13) + " поменялся на 'Собирается'\n");
 
                         } catch (SQLException ex) {
                             ex.printStackTrace();
@@ -350,7 +341,6 @@ class WarehouseEmployee {
                             DatabaseHandler.doUpdate(connection, SQL);
                             tableModel.removeRow(supplyTable.getSelectedRow());
 
-                            textActionLog.append("Назначена служба доставки поставке №" + deliveryNumber + "\n");
 
                         } catch (SQLException ex) {
                             ex.printStackTrace();
@@ -393,10 +383,9 @@ class WarehouseEmployee {
                 tableModel.addColumn("Стоимость");
 
 
-                SQL = "select top 2 * from Product";
-                final int[] counter = {0};
+                SQL = "select * from Product";
 
-                // Вывод первых 10 записей
+                // Вывод
                 try {
                     resultSet = DatabaseHandler.doSelect(connection, SQL);
 
@@ -412,35 +401,8 @@ class WarehouseEmployee {
                     ex.printStackTrace();
                 }
 
-                final JButton show = new JButton(new AbstractAction("Показать следующие 2 товара") {
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        tableModel.setRowCount(0);
-
-                        counter[0] += 2;
-                        SQL = "select * from Product order by product_id offset " + counter[0] + " rows fetch next 2 rows only";
-
-                        try {
-                            resultSet = DatabaseHandler.doSelect(connection, SQL);
-
-                            while (resultSet.next()) {
-
-                                tableModel.addRow(new Object[]{resultSet.getString(1), resultSet.getString(2), resultSet.getString(3), resultSet.getString(4)});
-
-                            }
-
-                        } catch (SQLException ex) {
-                            ex.printStackTrace();
-                        }
-
-                    }
-                });
-
                 Container container = showStuffWindow.getContentPane();
-                container.setLayout(new GridLayout(2, 1, 5, 40));
-                container.add(show);
+                container.setLayout(new GridLayout(1, 1, 5, 40));
                 container.add(new JScrollPane(productTable));
             }
         });
@@ -469,10 +431,9 @@ class WarehouseEmployee {
                 tableModel.addColumn("Адрес");
                 tableModel.addColumn("Телефон");
 
-                SQL = "select top 2 * from Shop";
-                final int[] counter = {0};
+                SQL = "select * from Shop";
 
-                // Вывод первых 10 записей
+                // Вывод
                 try {
                     resultSet = DatabaseHandler.doSelect(connection, SQL);
 
@@ -488,43 +449,72 @@ class WarehouseEmployee {
                     ex.printStackTrace();
                 }
 
-                final JButton show = new JButton(new AbstractAction("Показать следующие 2 магазина") {
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        tableModel.setRowCount(0);
-
-                        counter[0] += 2;
-                        SQL = "select * from Shop order by shop_id offset " + counter[0] + " rows fetch next 2 rows only";
-
-                        try {
-                            resultSet = DatabaseHandler.doSelect(connection, SQL);
-
-                            while (resultSet.next()) {
-
-                                tableModel.addRow(new Object[]{resultSet.getString(1), resultSet.getString(2), resultSet.getString(3), resultSet.getString(4)});
-
-                            }
-
-                        } catch (SQLException ex) {
-                            ex.printStackTrace();
-                        }
-
-                    }
-                });
 
                 Container container = showShopWindow.getContentPane();
-                container.setLayout(new GridLayout(2, 1, 5, 40));
-                container.add(show);
+                container.setLayout(new GridLayout(1, 1, 5, 40));
                 container.add(new JScrollPane(shopTable));
             }
         });
 
         // Просмотр поставок
-        JButton showSupply = new JButton("Просмотр поставок");
+        JButton showSupply = new JButton(new AbstractAction("Просмотр поставок") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
 
-        JTextArea textActionLog = new JTextArea();
+                final JFrame showSupplyWindow = new JFrame("Поставки");
+                showSupplyWindow.setVisible(true);
+                showSupplyWindow.setBounds(700, 400, 1150, 500);
+
+                final JTable supplyTable = new JTable();
+                final DefaultTableModel tableModel = new DefaultTableModel() {
+
+                    @Override
+                    public boolean isCellEditable(int row, int column) {
+                        return false;
+                    }
+                };
+
+
+                supplyTable.setModel(tableModel);
+                tableModel.addColumn("Код товара");
+                tableModel.addColumn("Название товара");
+                tableModel.addColumn("Количество");
+                tableModel.addColumn("Стоимость");
+                tableModel.addColumn("Дата поставки");
+                tableModel.addColumn("Статус поставки");
+                tableModel.addColumn("Код доставки");
+                tableModel.addColumn("Название доставки");
+                tableModel.addColumn("Номер поставки");
+
+                SQL = "select * from Delivery";
+
+                // Вывод
+                try {
+
+                    resultSet = DatabaseHandler.doSelect(connection, SQL);
+                    if (!resultSet.next()) JOptionPane.showMessageDialog(null, "Поставок нет.", "Информация", JOptionPane.PLAIN_MESSAGE);
+                    else {
+
+                        resultSet.beforeFirst();
+                        while (resultSet.next()) {
+
+                            tableModel.addRow(new Object[] {resultSet.getString(1), resultSet.getString(2), resultSet.getString(3), resultSet.getString(4),
+                                    resultSet.getString(5), resultSet.getString(10), resultSet.getString(11), resultSet.getString(12),
+                                    resultSet.getString(13)});
+                        }
+                    }
+
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+
+                Container container = showSupplyWindow.getContentPane();
+                container.setLayout(new GridLayout(1, 1, 20, 40));
+                container.add(new JScrollPane(supplyTable));
+
+            }
+        });
+
 
         Connection connection;
 
@@ -538,12 +528,9 @@ class WarehouseEmployee {
             Container container = this.getContentPane();
             container.setLayout(new GridLayout(2, 4, 25, 25));
 
-            textActionLog.setEditable(false);
-
             container.add(newStuffButton);
             container.add(editStuffButton);
             container.add(createSupply);
-            container.add(textActionLog);
             container.add(showStuff);
             container.add(showShop);
             container.add(showSupply);

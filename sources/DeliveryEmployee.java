@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.xml.crypto.Data;
 
 
 /*
@@ -38,6 +37,7 @@ class DeliveryEmployee {
         ResultSet resultSet;
         String SQL;
 
+        // Просмотр поставок
         JButton showSupply = new JButton(new AbstractAction("Поставки") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -62,7 +62,7 @@ class DeliveryEmployee {
                     ex.printStackTrace();
                 }
 
-                final JTable supplyTable = new JTable() {};
+                final JTable supplyTable = new JTable();
 
                 final DefaultTableModel tableModel = new DefaultTableModel() {
 
@@ -103,10 +103,9 @@ class DeliveryEmployee {
                 tableModel.addColumn("Статус поставки");
                 tableModel.addColumn("Номер поставки");
 
-                SQL = "select top 10 * from Delivery where delivery_name = " + deliveryName;
-                final int[] counter = {0};
+                SQL = "select * from Delivery where delivery_name = " + deliveryName;
 
-                // Вывод первых 10 записей
+                // Вывод записей
                 try {
 
                     resultSet = DatabaseHandler.doSelect(connection, SQL);
@@ -127,6 +126,7 @@ class DeliveryEmployee {
                     ex.printStackTrace();
                 }
 
+                // Принять поставку в реализацию
                 final JButton takeDelivery = new JButton(new AbstractAction("Принять поставку в реализацию") {
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -148,7 +148,7 @@ class DeliveryEmployee {
                 });
 
                 Container container = showSupplyWindow.getContentPane();
-                container.setLayout(new GridLayout(3, 1, 5, 40));
+                container.setLayout(new GridLayout(2, 1, 5, 40));
                 container.add(new JScrollPane(supplyTable));
                 container.add(takeDelivery);
             }
@@ -165,7 +165,7 @@ class DeliveryEmployee {
             this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
             Container container = this.getContentPane();
-            container.setLayout(new GridLayout(2, 4, 25, 25));
+            container.setLayout(new GridLayout(1, 4, 25, 25));
             container.add(showSupply);
 
         }

@@ -50,14 +50,19 @@ public class DatabaseHandler {
         try {
             Connection connection = DriverManager.getConnection(connectionURL);
 
+            String SQL = "select current_user";
+            ResultSet resultSet = doSelect(connection, SQL);
+            resultSet.next();
+            SQL = resultSet.getString(1);
+
             // Создание работника склада
-            if (login.equals("user=склад;")) { WarehouseEmployee employee = new WarehouseEmployee(connection); }
+            if (SQL.startsWith("склад")) { WarehouseEmployee employee = new WarehouseEmployee(connection); }
 
-            // Создание работников магазина
-            if (login.equals("user=магазинОвен;")) { ShopEmployee employee = new ShopEmployee(connection, "Овен"); }
+            // Создание работника магазина
+            if (SQL.startsWith("магазин")) { ShopEmployee employee = new ShopEmployee(connection, SQL.substring(7)); }
 
-            // Создание работников доставки
-            if (login.equals("user=доставкаСдек;")) { DeliveryEmployee employee = new DeliveryEmployee(connection, "Сдек"); }
+            // Создание работника доставки
+            if (SQL.startsWith("доставка")) { DeliveryEmployee employee = new DeliveryEmployee(connection, SQL.substring(8)); }
         }
 
         catch (SQLException ex) {
